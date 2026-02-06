@@ -138,15 +138,14 @@ export function DatabasesPanel({
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent className="bg-gray-100" align="end">
                   <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
                     onClick={(e) => {
                       e.stopPropagation();
                       setDropDialog({ open: true, database: db });
                     }}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-4 h-4" />
                     Drop Database
                   </DropdownMenuItem>
                 </DropdownMenuContent>

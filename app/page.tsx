@@ -1,11 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 export default function Page() {
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => {
+        if (res.ok) setIsAuthenticated(true);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -16,12 +26,20 @@ export default function Page() {
             <span className="font-semibold text-lg">Pg Studio</span>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => router.push("/auth/signin")}>
-              Sign In
-            </Button>
-            <Button onClick={() => router.push("/auth/signup")}>
-              Get Started
-            </Button>
+            {isAuthenticated ? (
+              <Button onClick={() => router.push("/dashboard")}>
+                Go to Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => router.push("/auth/signin")}>
+                  Sign In
+                </Button>
+                <Button onClick={() => router.push("/auth/signup")}>
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -45,16 +63,24 @@ export default function Page() {
             data, and execute SQL—all from your browser.
           </p>
           <div className="flex gap-3 justify-center">
-            <Button size="lg" onClick={() => router.push("/auth/signup")}>
-              Get Started
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => router.push("/auth/signin")}
-            >
-              Sign In
-            </Button>
+            {isAuthenticated ? (
+              <Button size="lg" onClick={() => router.push("/dashboard")}>
+                Go to Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button size="lg" onClick={() => router.push("/auth/signup")}>
+                  Get Started
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => router.push("/auth/signin")}
+                >
+                  Sign In
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </main>

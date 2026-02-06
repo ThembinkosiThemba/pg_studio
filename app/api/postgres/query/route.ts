@@ -39,8 +39,18 @@ function getPool(connectionString: string): Pool {
 
 export async function POST(req: NextRequest) {
   let client;
+  let userId: string;
+  let connectionId: string;
+  let query: string;
+  let action: string;
+
   try {
-    const { userId, connectionId, query, action } = await req.json();
+    const body = await req.json();
+    userId = body.userId;
+    connectionId = body.connectionId;
+    query = body.query;
+    action = body.action;
+    const database = body.database;
 
     if (!userId || !connectionId || !query) {
       return NextResponse.json(
@@ -62,7 +72,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const pool = getPool(connection.connectionString);
+    let connectionString = connection.connectionString;
+    if (database) {
+      try {
+        const url = new URL(connectionString);
+        url.pathname = `/${database}`;
+        connectionString = url.toString();
+      } catch (urlError) {
+        console.error("Failed to parse connection URL:", urlError);
+      }
+    }
+
+    const pool = getPool(connectionString);
     client = await pool.connect();
 
     const result = await client.query(query);
@@ -85,22 +106,26 @@ export async function POST(req: NextRequest) {
       rows: result.rows,
       rowCount: result.rowCount,
       fields: result.fields.map((f: { name: any }) => f.name),
+      command: result.command,
     });
   } catch (error: any) {
-    try {
-      const { userId, connectionId, query, action } = await req.json();
-      const actionsCollection = await getActionsCollection();
-      await actionsCollection.insertOne({
-        userId,
-        connectionId,
-        action: action || "QUERY",
-        target: query.substring(0, 50),
-        details: query,
-        status: "error",
-        error: error.message,
-        createdAt: new Date(),
-      });
-    } catch {}
+    if (userId && connectionId && query) {
+      try {
+        const actionsCollection = await getActionsCollection();
+        await actionsCollection.insertOne({
+          userId,
+          connectionId,
+          action: action || "QUERY",
+          target: query.substring(0, 50),
+          details: query,
+          status: "error",
+          error: error.message,
+          createdAt: new Date(),
+        });
+      } catch (logError) {
+        console.error("Failed to log error action:", logError);
+      }
+    }
 
     if (client) {
       client.release();

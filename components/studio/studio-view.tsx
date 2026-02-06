@@ -1,10 +1,13 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import type { StudioNavigation } from "@/lib/use-studio-navigation";
 import { StudioBreadcrumb } from "./studio-breadcrumb";
 import { DatabasesPanel } from "./databases-panel";
 import { TablesPanel } from "./tables-panel";
 import { TableDetailPanel } from "./table-detail-panel";
+import { DatabaseActions } from "./database-actions";
+import { QueryRunner } from "./query-runner";
 import Image from "next/image";
 
 interface StudioViewProps {
@@ -14,6 +17,13 @@ interface StudioViewProps {
 
 export function StudioView({ userId, navigation }: StudioViewProps) {
   const { connectionId, connectionName, database, table } = navigation;
+  const [showQueryRunner, setShowQueryRunner] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleTableCreated = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+    setShowQueryRunner(false);
+  }, []);
 
   if (!connectionId) {
     return null;
@@ -33,19 +43,40 @@ export function StudioView({ userId, navigation }: StudioViewProps) {
     }
 
     if (database) {
+
       return (
         <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Database" width={40} height={40} />
-            <div>
-              <h2 className="text-xl font-semibold font-mono">{database}</h2>
-              <p className="text-sm text-muted-foreground">
-                Select a table to view data
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Image src="/logo.png" alt="Database" width={40} height={40} />
+              <div>
+                <h2 className="text-xl font-semibold font-mono">{database}</h2>
+                <p className="text-sm text-muted-foreground">
+                  Manage tables and run queries
+                </p>
+              </div>
             </div>
+
+            <DatabaseActions
+              userId={userId}
+              connectionId={connectionId}
+              database={database}
+              onTableCreated={handleTableCreated}
+              onQueryClick={() => setShowQueryRunner(!showQueryRunner)}
+            />
           </div>
 
+          {showQueryRunner && (
+            <QueryRunner
+              userId={userId}
+              connectionId={connectionId}
+              database={database}
+              onTableCreated={handleTableCreated}
+            />
+          )}
+
           <TablesPanel
+            key={refreshKey}
             userId={userId}
             connectionId={connectionId}
             database={database}

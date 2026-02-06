@@ -35,9 +35,10 @@ export function TablesPanel({
 }: TablesPanelProps) {
   const [tables, setTables] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dropDialog, setDropDialog] = useState<{ open: boolean; table: string }>(
-    { open: false, table: "" }
-  );
+  const [dropDialog, setDropDialog] = useState<{
+    open: boolean;
+    table: string;
+  }>({ open: false, table: "" });
   const [dropping, setDropping] = useState(false);
 
   useEffect(() => {
@@ -111,7 +112,7 @@ export function TablesPanel({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {tables.map((table) => (
           <Card
             key={table}
@@ -119,13 +120,12 @@ export function TablesPanel({
             onClick={() => onSelectTable(table)}
           >
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <Table2 className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center gap-1">
+                <div className="p-2 rounded-lg">
+                  <Table2 className="w-4 h-4 text-black-600/10" />
                 </div>
                 <div>
                   <h3 className="font-medium font-mono text-sm">{table}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Table</p>
                 </div>
               </div>
               <DropdownMenu>
@@ -139,15 +139,15 @@ export function TablesPanel({
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent className="bg-gray-50" align="end">
                   <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
+                    className=""
                     onClick={(e) => {
                       e.stopPropagation();
                       setDropDialog({ open: true, table });
                     }}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-4 h-4" />
                     Drop Table
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -172,7 +172,9 @@ export function TablesPanel({
             <DialogTitle>Drop Table</DialogTitle>
             <DialogDescription>
               Are you sure you want to drop the table{" "}
-              <span className="font-mono font-semibold">{dropDialog.table}</span>
+              <span className="font-mono font-semibold">
+                {dropDialog.table}
+              </span>
               ? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>

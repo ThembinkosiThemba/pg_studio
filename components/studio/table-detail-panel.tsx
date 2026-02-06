@@ -167,8 +167,8 @@ export function TableDetailPanel({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-500/10">
-            <Table2 className="w-6 h-6 text-blue-600" />
+          <div className="p-2">
+            <Table2 className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-xl font-semibold font-mono">{tableName}</h2>
@@ -180,10 +180,10 @@ export function TableDetailPanel({
         <Button
           variant="outline"
           size="sm"
-          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="bg-gray-100"
           onClick={() => setDropDialogOpen(true)}
         >
-          <Trash2 className="w-4 h-4 mr-2" />
+          <Trash2 className="w-4 h-4" />
           Drop Table
         </Button>
       </div>
@@ -279,9 +279,9 @@ export function TableDetailPanel({
             <div className="flex items-center gap-2">
               <Button onClick={executeQuery} disabled={queryLoading}>
                 {queryLoading ? (
-                  <Loader className="w-4 h-4 animate-spin mr-2" />
+                  <Loader className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Play className="w-4 h-4 mr-2" />
+                  <Play className="w-4 h-4" />
                 )}
                 Execute
               </Button>

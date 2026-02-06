@@ -46,7 +46,7 @@ function getPool(connectionString: string): Pool {
 export async function POST(req: NextRequest) {
   let client;
   try {
-    const { userId, connectionId, type, tableName } = await req.json();
+    const { userId, connectionId, type, tableName, database } = await req.json();
 
     if (!userId || !connectionId) {
       return NextResponse.json(
@@ -68,7 +68,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const pool = getPool(connection.connectionString);
+    let connectionString = connection.connectionString;
+    if (database && type !== "databases") {
+      try {
+        const url = new URL(connectionString);
+        url.pathname = `/${database}`;
+        connectionString = url.toString();
+      } catch (urlError) {
+        console.error("Failed to parse connection URL:", urlError);
+      }
+    }
+
+    const pool = getPool(connectionString);
     client = await pool.connect();
 
     let result;
