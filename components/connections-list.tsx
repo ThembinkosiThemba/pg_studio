@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Connection } from "@/lib/types";
+
+import { Connection, ConnectionType } from "@/lib/types";
 
 interface ConnectionsListProps {
   userId: string;
@@ -31,9 +32,14 @@ export function ConnectionsList({
 }: ConnectionsListProps) {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newConnection, setNewConnection] = useState({
+  const [newConnection, setNewConnection] = useState<{
+    name: string;
+    connectionString: string;
+    type: ConnectionType;
+  }>({
     name: "",
     connectionString: "",
+    type: "postgres",
   });
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -74,7 +80,7 @@ export function ConnectionsList({
 
       if (!response.ok) throw new Error("Failed to add connection");
       toast.success("Connection added successfully");
-      setNewConnection({ name: "", connectionString: "" });
+      setNewConnection({ name: "", connectionString: "", type: "postgres" });
       setDialogOpen(false);
       fetchConnections();
     } catch (error) {
@@ -145,6 +151,35 @@ export function ConnectionsList({
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
+                  Connection Type
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${newConnection.type === "postgres"
+                      ? "bg-primary/10 border-primary text-primary font-medium"
+                      : "hover:bg-muted"
+                      }`}
+                    onClick={() =>
+                      setNewConnection({ ...newConnection, type: "postgres" })
+                    }
+                  >
+                    PostgreSQL
+                  </div>
+                  <div
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${newConnection.type === "mongo"
+                      ? "bg-primary/10 border-primary text-primary font-medium"
+                      : "hover:bg-muted"
+                      }`}
+                    onClick={() =>
+                      setNewConnection({ ...newConnection, type: "mongo" })
+                    }
+                  >
+                    MongoDB
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
                   Connection Name
                 </label>
                 <Input
@@ -211,8 +246,8 @@ export function ConnectionsList({
                   <Image src="/logo.png" alt="Logo" width={32} height={32} />
                   <div>
                     <h3 className="font-medium">{conn.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      PostgreSQL
+                    <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+                      {conn.type || "postgres"}
                     </p>
                   </div>
                 </div>

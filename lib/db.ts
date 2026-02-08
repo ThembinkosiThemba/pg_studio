@@ -23,9 +23,10 @@ export async function getActionsCollection() {
   return database.collection("action_history");
 }
 
-export interface PostgresConnection {
+export interface SavedConnection {
   _id?: string;
   userId: string;
+  type: "postgres" | "mongo";
   name: string;
   connectionString: string;
   createdAt: Date;
@@ -37,11 +38,11 @@ export interface ActionHistory {
   userId: string;
   connectionId: string;
   action:
-    | "DELETE_ROWS"
-    | "DROP_TABLE"
-    | "DROP_DATABASE"
-    | "QUERY"
-    | "CREATE_TABLE";
+  | "DELETE_ROWS"
+  | "DROP_TABLE"
+  | "DROP_DATABASE"
+  | "QUERY"
+  | "CREATE_TABLE";
   target: string;
   details: string;
   status: "success" | "error";

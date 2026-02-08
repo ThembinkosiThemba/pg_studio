@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, name, connectionString } = await req.json();
+    const { userId, name, connectionString, type = "postgres" } = await req.json();
 
     if (!userId || !name || !connectionString) {
       return NextResponse.json(
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const connections = await getConnectionsCollection();
     const result = await connections.insertOne({
       userId,
+      type,
       name,
       connectionString,
       createdAt: new Date(),

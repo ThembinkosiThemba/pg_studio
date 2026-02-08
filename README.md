@@ -1,19 +1,19 @@
 # Pg Studio
 
-A modern, open-source web-based tool to explore, query, and manage PostgreSQL databases.
-
+A modern, open-source web-based tool to explore, query, and manage PostgreSQL and MongoDB databases.
+ 
 <img src="public/studio.png" alt="Pg Studio" width="60%">
-
+ 
 ## Features
-
-- **Multiple Connections** - Connect to multiple PostgreSQL databases from one dashboard
-- **Database Explorer** - Browse databases, tables, and columns with an intuitive interface
-- **Data Preview** - Automatically preview the first 10 rows of any table
-- **SQL Query Editor** - Write and execute custom SQL queries with syntax highlighting
-- **Schema Viewer** - View table schemas with column types and nullable info
-- **Quick Actions** - Drop tables and databases with confirmation dialogs
+ 
+- **Multi-Database Support** - Connect to both PostgreSQL and MongoDB from one dashboard
+- **Database Explorer** - Browse databases, tables/collections, and records with an intuitive interface
+- **Data Preview** - Automatically preview data in tables or collections
+- **Query Tools** - SQL editor for Postgres and JSON query builder for MongoDB
+- **Schema Viewer** - View table schemas and collection details
+- **Quick Actions** - Drop tables, collections, and databases with confirmation dialogs
 - **Secure** - Connection strings are stored securely and never exposed to the client after creation
-- **Breadcrumb Navigation** - Easy navigation between connections, databases, and tables
+- **Breadcrumb Navigation** - Easy navigation between connections, databases, and resources
 
 ## Getting Started
 
@@ -50,7 +50,7 @@ pnpm dev
 ## Usage
 
 1. **Sign up** for an account
-2. **Add a connection** with your PostgreSQL connection string
+2. **Add a connection**, select **PostgreSQL** or **MongoDB**, and enter your connection string
 3. **Select a connection** to view available databases
 4. **Click a database** to see its tables
 5. **Click a table** to preview data, view schema, or run queries

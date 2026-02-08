@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConnectionsList } from "@/components/connections-list";
 import { StudioView } from "@/components/studio";
+import { MongoStudioView } from "@/components/mongo-studio/mongo-studio-view";
 import { useStudioNavigation } from "@/lib/use-studio-navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader } from "lucide-react";
@@ -50,7 +51,11 @@ export default function DashboardPage() {
   };
 
   const handleSelectConnection = (connection: Connection) => {
-    navigation.selectConnection(connection._id, connection.name);
+    navigation.selectConnection(
+      connection._id,
+      connection.name,
+      connection.type || "postgres",
+    );
   };
 
   if (loading) {
@@ -99,7 +104,11 @@ export default function DashboardPage() {
         </header>
 
         <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <StudioView userId={userId} navigation={navigation} />
+          {navigation.connectionType === "mongo" ? (
+            <MongoStudioView userId={userId} navigation={navigation} />
+          ) : (
+            <StudioView userId={userId} navigation={navigation} />
+          )}
         </main>
       </div>
     );
