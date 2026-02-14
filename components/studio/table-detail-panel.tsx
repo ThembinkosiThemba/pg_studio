@@ -38,6 +38,7 @@ interface Column {
   column_name: string;
   data_type: string;
   is_nullable: string;
+  is_primary: boolean;
 }
 
 interface TableDetailPanelProps {
@@ -212,6 +213,9 @@ export function TableDetailPanel({
               userId={userId}
               connectionId={connectionId}
               tableName={tableName}
+              primaryKey={
+                columns.find((c) => c.is_primary)?.column_name || undefined
+              }
             />
           </Card>
         </TabsContent>

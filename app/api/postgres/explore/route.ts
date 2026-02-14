@@ -103,7 +103,27 @@ export async function POST(req: NextRequest) {
         );
       }
       const queryResult = await client.query(
-        `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = $1 AND table_schema = 'public' ORDER BY ordinal_position;`,
+        `
+        SELECT 
+          c.column_name, 
+          c.data_type, 
+          c.is_nullable,
+          CASE WHEN pk.column_name IS NOT NULL THEN true ELSE false END as is_primary
+        FROM information_schema.columns c
+        LEFT JOIN (
+          SELECT kcu.column_name
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage kcu 
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+          WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND tc.table_name = $1
+          AND tc.table_schema = 'public'
+        ) pk ON c.column_name = pk.column_name
+        WHERE c.table_name = $1 
+        AND c.table_schema = 'public' 
+        ORDER BY c.ordinal_position;
+        `,
         [tableName],
       );
       result = queryResult.rows;

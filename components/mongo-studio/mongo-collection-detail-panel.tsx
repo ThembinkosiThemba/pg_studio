@@ -29,7 +29,9 @@ import {
   Loader,
   AlertCircle,
   RefreshCw,
+  X,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface MongoCollectionDetailPanelProps {
@@ -52,6 +54,9 @@ export function MongoCollectionDetailPanel({
   const [dropDialogOpen, setDropDialogOpen] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [viewDocument, setViewDocument] = useState<any | null>(null);
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
 
   const [query, setQuery] = useState("{}");
   const [queryResult, setQueryResult] = useState<any[] | null>(null);
@@ -60,6 +65,7 @@ export function MongoCollectionDetailPanel({
 
   useEffect(() => {
     fetchDocuments();
+    setSelectedIds(new Set());
   }, [collectionName, connectionId]);
 
   const fetchDocuments = async () => {
@@ -81,6 +87,7 @@ export function MongoCollectionDetailPanel({
       if (!response.ok) throw new Error("Failed to fetch documents");
       const data = await response.json();
       setDocuments(data.data || []);
+      setSelectedIds(new Set());
     } catch (error) {
       console.error("Error fetching documents:", error);
       toast.error("Failed to load documents");
@@ -151,6 +158,73 @@ export function MongoCollectionDetailPanel({
       toast.error(error.message || "Failed to delete document");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = documents.map((doc) => doc._id).filter(Boolean);
+      setSelectedIds(new Set(allIds));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) {
+      next.add(id);
+    } else {
+      next.delete(id);
+    }
+    setSelectedIds(next);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedIds.size} documents?`,
+      )
+    )
+      return;
+
+    try {
+      setIsDeletingSelected(true);
+      // We'll delete one by one or batch if API supported it.
+      // For now, let's assume we loop or send a list. The current API might only support single delete per the code I saw earlier.
+      // Let's modify the loop to be safe.
+      const idsToDelete = Array.from(selectedIds);
+
+      // Ideally API should support batch delete. Since I haven't changed API yet, I'll loop (slow but works for small batches)
+      // Or I can send a custom action. Let's try to stick to what we have or improved it.
+      // Actually, let's do parallel requests for now as a quick implementation, capped at some limit.
+
+      const deletePromises = idsToDelete.map((id) =>
+        fetch("/api/mongo/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            connectionId,
+            database,
+            collection: collectionName,
+            documentId: id,
+            action: "DELETE_DOCUMENT",
+          }),
+        }),
+      );
+
+      await Promise.all(deletePromises);
+
+      toast.success(`Deleted ${selectedIds.size} documents`);
+      setSelectedIds(new Set());
+      fetchDocuments();
+    } catch (error: any) {
+      console.error("Error deleting documents:", error);
+      toast.error("Failed to delete selection");
+    } finally {
+      setIsDeletingSelected(false);
     }
   };
 
@@ -225,6 +299,21 @@ export function MongoCollectionDetailPanel({
           </div>
         </div>
         <div className="flex gap-2">
+          {selectedIds.size > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteSelected}
+              disabled={isDeletingSelected}
+            >
+              {isDeletingSelected ? (
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete Selected ({selectedIds.size})
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={fetchDocuments}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -265,6 +354,18 @@ export function MongoCollectionDetailPanel({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
+                      <TableHead className="w-[40px] px-4">
+                        <Checkbox
+                          checked={
+                            documents.length > 0 &&
+                            selectedIds.size === documents.length
+                          }
+                          onCheckedChange={(checked) =>
+                            handleSelectAll(checked as boolean)
+                          }
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       {headers.map((header) => (
                         <TableHead
                           key={header}
@@ -278,7 +379,32 @@ export function MongoCollectionDetailPanel({
                   </TableHeader>
                   <TableBody>
                     {documents.map((doc, idx) => (
-                      <TableRow key={doc._id || idx}>
+                      <TableRow
+                        key={doc._id || idx}
+                        className="cursor-pointer hover:bg-muted/30"
+                        onClick={(e) => {
+                          // Prevent opening if clicking checkbox or actions
+                          if (
+                            (e.target as HTMLElement).closest(
+                              '[role="checkbox"]',
+                            ) ||
+                            (e.target as HTMLElement).closest("button")
+                          ) {
+                            return;
+                          }
+                          setViewDocument(doc);
+                        }}
+                      >
+                        <TableCell className="px-4">
+                          <Checkbox
+                            checked={doc._id && selectedIds.has(doc._id)}
+                            onCheckedChange={(checked) =>
+                              doc._id && handleSelectOne(doc._id, checked as boolean)
+                            }
+                            aria-label="Select row"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </TableCell>
                         {headers.map((header) => (
                           <TableCell
                             key={`${doc._id}-${header}`}
@@ -308,7 +434,7 @@ export function MongoCollectionDetailPanel({
                     {documents.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={headers.length + 1}
+                          colSpan={headers.length + 2}
                           className="text-center py-8 text-muted-foreground"
                         >
                           No documents found
@@ -463,6 +589,31 @@ export function MongoCollectionDetailPanel({
                 <Loader className="w-4 h-4 animate-spin mr-2" />
               ) : null}
               Drop Collection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Detail Dialog */}
+      <Dialog
+        open={!!viewDocument}
+        onOpenChange={(open) => !open && setViewDocument(null)}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Document Details</DialogTitle>
+            <DialogDescription>
+              Viewing document content (JSON)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto border rounded-md p-4 bg-muted/30">
+            <pre className="text-xs font-mono whitespace-pre-wrap break-all">
+              {viewDocument ? JSON.stringify(viewDocument, null, 2) : ""}
+            </pre>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDocument(null)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
