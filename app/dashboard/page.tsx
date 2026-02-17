@@ -8,6 +8,7 @@ import { MongoStudioView } from "@/components/mongo-studio/mongo-studio-view";
 import { useStudioNavigation } from "@/lib/use-studio-navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader } from "lucide-react";
+import { RedisStudioView } from "@/components/redis-studio/redis-studio-view";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Connection } from "@/lib/types";
@@ -106,6 +107,8 @@ export default function DashboardPage() {
         <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {navigation.connectionType === "mongo" ? (
             <MongoStudioView userId={userId} navigation={navigation} />
+          ) : navigation.connectionType === "redis" ? (
+            <RedisStudioView userId={userId} navigation={navigation} />
           ) : (
             <StudioView userId={userId} navigation={navigation} />
           )}

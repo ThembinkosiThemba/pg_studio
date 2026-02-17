@@ -1,4 +1,4 @@
-export type ConnectionType = "postgres" | "mongo";
+export type ConnectionType = "postgres" | "mongo" | "redis";
 
 export interface Connection {
   _id: string;

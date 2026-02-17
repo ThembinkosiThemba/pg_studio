@@ -153,12 +153,13 @@ export function ConnectionsList({
                 <label className="block text-sm font-medium mb-2">
                   Connection Type
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div
-                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${newConnection.type === "postgres"
-                      ? "bg-primary/10 border-primary text-primary font-medium"
-                      : "hover:bg-muted"
-                      }`}
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${
+                      newConnection.type === "postgres"
+                        ? "bg-primary/10 border-primary text-primary font-medium"
+                        : "hover:bg-muted"
+                    }`}
                     onClick={() =>
                       setNewConnection({ ...newConnection, type: "postgres" })
                     }
@@ -166,15 +167,28 @@ export function ConnectionsList({
                     PostgreSQL
                   </div>
                   <div
-                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${newConnection.type === "mongo"
-                      ? "bg-primary/10 border-primary text-primary font-medium"
-                      : "hover:bg-muted"
-                      }`}
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${
+                      newConnection.type === "mongo"
+                        ? "bg-primary/10 border-primary text-primary font-medium"
+                        : "hover:bg-muted"
+                    }`}
                     onClick={() =>
                       setNewConnection({ ...newConnection, type: "mongo" })
                     }
                   >
                     MongoDB
+                  </div>
+                  <div
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${
+                      newConnection.type === "redis"
+                        ? "bg-primary/10 border-primary text-primary font-medium"
+                        : "hover:bg-muted"
+                    }`}
+                    onClick={() =>
+                      setNewConnection({ ...newConnection, type: "redis" })
+                    }
+                  >
+                    Redis
                   </div>
                 </div>
               </div>
@@ -195,7 +209,13 @@ export function ConnectionsList({
                   Connection String
                 </label>
                 <Textarea
-                  placeholder="postgresql://user:password@host:port/database"
+                  placeholder={
+                    newConnection.type === "postgres"
+                      ? "postgresql://user:password@host:port/database"
+                      : newConnection.type === "mongo"
+                        ? "mongodb://host:port"
+                        : "redis://user:password@host:port"
+                  }
                   value={newConnection.connectionString}
                   onChange={(e) =>
                     setNewConnection({
@@ -206,6 +226,25 @@ export function ConnectionsList({
                   className="font-mono text-sm"
                   rows={3}
                 />
+                {newConnection.type === "redis" && (
+                  <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                    <p className="font-medium">Examples:</p>
+                    <p>
+                      <span className="font-semibold">Local:</span>{" "}
+                      redis://localhost:6379
+                    </p>
+                    <p>
+                      <span className="font-semibold">Authenticated:</span>{" "}
+                      redis://:password@host:port
+                    </p>
+                    <p>
+                      <span className="font-semibold">
+                        Redis Cloud/Upstash:
+                      </span>{" "}
+                      redis://default:password@host:port
+                    </p>
+                  </div>
+                )}
               </div>
               <Button onClick={handleAddConnection} className="w-full">
                 Add Connection
