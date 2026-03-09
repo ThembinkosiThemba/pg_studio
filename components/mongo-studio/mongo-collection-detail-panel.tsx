@@ -30,8 +30,10 @@ import {
   AlertCircle,
   RefreshCw,
   X,
+  ListTree,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 interface MongoCollectionDetailPanelProps {
@@ -63,10 +65,44 @@ export function MongoCollectionDetailPanel({
   const [queryLoading, setQueryLoading] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
 
+  const [indexes, setIndexes] = useState<any[]>([]);
+  const [indexesLoading, setIndexesLoading] = useState(false);
+  const [indexesFetched, setIndexesFetched] = useState(false);
+
   useEffect(() => {
     fetchDocuments();
+    setIndexes([]);
+    setIndexesFetched(false);
     setSelectedIds(new Set());
   }, [collectionName, connectionId]);
+
+  const fetchIndexes = async () => {
+    if (indexesFetched) return;
+    try {
+      setIndexesLoading(true);
+      const response = await fetch("/api/mongo/explore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          connectionId,
+          type: "indexes",
+          database,
+          collection: collectionName,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch indexes");
+      const data = await response.json();
+      setIndexes(data.data || []);
+      setIndexesFetched(true);
+    } catch (error) {
+      console.error("Error fetching indexes:", error);
+      toast.error("Failed to load indexes");
+    } finally {
+      setIndexesLoading(false);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -332,10 +368,14 @@ export function MongoCollectionDetailPanel({
 
       {/* Tabs */}
       <Tabs defaultValue="documents" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-xs">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
           <TabsTrigger value="documents" className="flex items-center gap-2">
             <Files className="w-4 h-4" />
             Documents
+          </TabsTrigger>
+          <TabsTrigger value="indexes" className="flex items-center gap-2" onClick={fetchIndexes}>
+            <ListTree className="w-4 h-4" />
+            Indexes
           </TabsTrigger>
           <TabsTrigger value="query" className="flex items-center gap-2">
             <Code className="w-4 h-4" />
@@ -440,6 +480,58 @@ export function MongoCollectionDetailPanel({
                           No documents found
                         </TableCell>
                       </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="indexes" className="mt-4">
+          <Card className="p-4">
+            <h3 className="text-sm font-medium mb-4">Collection Indexes</h3>
+            {indexesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">Name</TableHead>
+                      <TableHead className="font-semibold">Key</TableHead>
+                      <TableHead className="font-semibold">Unique</TableHead>
+                      <TableHead className="font-semibold">Sparse</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {indexes.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          {indexesFetched ? "No indexes found" : "Click the Indexes tab to load"}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      indexes.map((idx) => (
+                        <TableRow key={idx.name}>
+                          <TableCell className="font-mono text-sm">{idx.name}</TableCell>
+                          <TableCell className="font-mono text-sm max-w-[300px] truncate">
+                            {JSON.stringify(idx.key)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={idx.unique ? "secondary" : "outline"}>
+                              {idx.unique ? "Yes" : "No"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={idx.sparse ? "secondary" : "outline"}>
+                              {idx.sparse ? "Yes" : "No"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
                     )}
                   </TableBody>
                 </Table>

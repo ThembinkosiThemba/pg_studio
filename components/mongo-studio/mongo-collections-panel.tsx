@@ -17,8 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MoreVertical, Trash2, Loader, Files } from "lucide-react";
+import { MoreVertical, Trash2, Loader, Files, Search } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 interface MongoCollectionsPanelProps {
   userId: string;
@@ -40,6 +41,7 @@ export function MongoCollectionsPanel({
     collection: string;
   }>({ open: false, collection: "" });
   const [dropping, setDropping] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchCollections();
@@ -111,10 +113,24 @@ export function MongoCollectionsPanel({
     );
   }
 
+  const filteredCollections = collections.filter((col) =>
+    col.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <>
+      <div className="mb-6 relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search collections..."
+          className="pl-9"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {collections.map((col) => (
+        {filteredCollections.map((col) => (
           <Card
             key={col}
             className="p-4 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
@@ -163,6 +179,12 @@ export function MongoCollectionsPanel({
         {collections.length === 0 && (
           <div className="col-span-full text-center py-12 text-muted-foreground">
             No collections found in this database
+          </div>
+        )}
+
+        {collections.length > 0 && filteredCollections.length === 0 && (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            No collections match your search
           </div>
         )}
       </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, ChevronRight } from "lucide-react";
+import { Trash2, Plus, ChevronRight, Search } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import {
@@ -42,6 +42,8 @@ export function ConnectionsList({
     type: "postgres",
   });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [filterType, setFilterType] = useState<ConnectionType | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchConnections();
@@ -155,11 +157,10 @@ export function ConnectionsList({
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <div
-                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${
-                      newConnection.type === "postgres"
-                        ? "bg-primary/10 border-primary text-primary font-medium"
-                        : "hover:bg-muted"
-                    }`}
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${newConnection.type === "postgres"
+                      ? "bg-primary/10 border-primary text-primary font-medium"
+                      : "hover:bg-muted"
+                      }`}
                     onClick={() =>
                       setNewConnection({ ...newConnection, type: "postgres" })
                     }
@@ -167,11 +168,10 @@ export function ConnectionsList({
                     PostgreSQL
                   </div>
                   <div
-                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${
-                      newConnection.type === "mongo"
-                        ? "bg-primary/10 border-primary text-primary font-medium"
-                        : "hover:bg-muted"
-                    }`}
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${newConnection.type === "mongo"
+                      ? "bg-primary/10 border-primary text-primary font-medium"
+                      : "hover:bg-muted"
+                      }`}
                     onClick={() =>
                       setNewConnection({ ...newConnection, type: "mongo" })
                     }
@@ -179,11 +179,10 @@ export function ConnectionsList({
                     MongoDB
                   </div>
                   <div
-                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${
-                      newConnection.type === "redis"
-                        ? "bg-primary/10 border-primary text-primary font-medium"
-                        : "hover:bg-muted"
-                    }`}
+                    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${newConnection.type === "redis"
+                      ? "bg-primary/10 border-primary text-primary font-medium"
+                      : "hover:bg-muted"
+                      }`}
                     onClick={() =>
                       setNewConnection({ ...newConnection, type: "redis" })
                     }
@@ -254,6 +253,52 @@ export function ConnectionsList({
         </Dialog>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center pb-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          <Button
+            variant={filterType === "all" ? "default" : "outline"}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setFilterType("all")}
+          >
+            All
+          </Button>
+          <Button
+            variant={filterType === "postgres" ? "default" : "outline"}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setFilterType("postgres")}
+          >
+            PostgreSQL
+          </Button>
+          <Button
+            variant={filterType === "mongo" ? "default" : "outline"}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setFilterType("mongo")}
+          >
+            MongoDB
+          </Button>
+          <Button
+            variant={filterType === "redis" ? "default" : "outline"}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setFilterType("redis")}
+          >
+            Redis
+          </Button>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search connections..."
+            className="pl-9 h-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       {connections.length === 0 ? (
         <Card className="p-12 text-center">
           <Image
@@ -274,36 +319,49 @@ export function ConnectionsList({
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {connections.map((conn) => (
-            <Card
-              key={conn._id}
-              className="p-4 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
-              onClick={() => onSelectConnection(conn)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <Image src="/logo.png" alt="Logo" width={32} height={32} />
-                  <div>
-                    <h3 className="font-medium">{conn.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 capitalize">
-                      {conn.type || "postgres"}
-                    </p>
+          {connections
+            .filter((conn) =>
+              (filterType === "all" || (conn.type || "postgres") === filterType) &&
+              conn.name.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map((conn) => (
+              <Card
+                key={conn._id}
+                className="p-4 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
+                onClick={() => onSelectConnection(conn)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <Image src="/logo.png" alt="Logo" width={32} height={32} />
+                    <div>
+                      <h3 className="font-medium">{conn.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+                        {conn.type || "postgres"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDeleteConnection(e, conn._id)}
+                      className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => handleDeleteConnection(e, conn._id)}
-                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                </div>
+              </Card>
+            ))}
+          {connections.filter((conn) =>
+            (filterType === "all" || (conn.type || "postgres") === filterType) &&
+            conn.name.toLowerCase().includes(searchQuery.toLowerCase())
+          ).length === 0 && (
+              <div className="col-span-full py-12 text-center text-muted-foreground">
+                No matching connections found for your search and filter.
               </div>
-            </Card>
-          ))}
+            )}
         </div>
       )}
     </div>

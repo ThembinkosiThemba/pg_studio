@@ -68,6 +68,16 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ data: serializedDocs });
             }
 
+            if (type === "indexes") {
+                if (!database || !collection) {
+                    return NextResponse.json({ error: "Database and collection required" }, { status: 400 });
+                }
+                const db = client.db(database);
+                const coll = db.collection(collection);
+                const indexes = await coll.indexes();
+                return NextResponse.json({ data: indexes });
+            }
+
             return NextResponse.json({ error: "Invalid type" }, { status: 400 });
 
         } finally {

@@ -30,6 +30,7 @@ import {
   Play,
   Loader,
   AlertCircle,
+  ListTree,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TablePreview } from "./table-preview";
@@ -39,6 +40,14 @@ interface Column {
   data_type: string;
   is_nullable: string;
   is_primary: boolean;
+}
+
+interface IndexInfo {
+  indexname: string;
+  columns: string;
+  is_unique: boolean;
+  is_primary: boolean;
+  indexdef: string;
 }
 
 interface TableDetailPanelProps {
@@ -61,6 +70,10 @@ export function TableDetailPanel({
   const [dropDialogOpen, setDropDialogOpen] = useState(false);
   const [dropping, setDropping] = useState(false);
 
+  const [indexes, setIndexes] = useState<IndexInfo[]>([]);
+  const [indexesLoading, setIndexesLoading] = useState(false);
+  const [indexesFetched, setIndexesFetched] = useState(false);
+
   const [query, setQuery] = useState(`SELECT * FROM "${tableName}" LIMIT 50`);
   const [queryResult, setQueryResult] = useState<any>(null);
   const [queryLoading, setQueryLoading] = useState(false);
@@ -68,8 +81,36 @@ export function TableDetailPanel({
 
   useEffect(() => {
     fetchColumns();
+    setIndexesFetched(false);
+    setIndexes([]);
     setQuery(`SELECT * FROM "${tableName}" LIMIT 50`);
   }, [tableName, connectionId]);
+
+  const fetchIndexes = async () => {
+    if (indexesFetched) return;
+    try {
+      setIndexesLoading(true);
+      const response = await fetch("/api/postgres/explore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          connectionId,
+          type: "indexes",
+          tableName,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to fetch indexes");
+      const data = await response.json();
+      setIndexes(data.data || []);
+      setIndexesFetched(true);
+    } catch (error) {
+      console.error("Error fetching indexes:", error);
+      toast.error("Failed to load indexes");
+    } finally {
+      setIndexesLoading(false);
+    }
+  };
 
   const fetchColumns = async () => {
     try {
@@ -191,7 +232,7 @@ export function TableDetailPanel({
 
       {/* Tabs */}
       <Tabs defaultValue="preview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <TabsList className="grid w-full grid-cols-4 max-w-xl">
           <TabsTrigger value="preview" className="flex items-center gap-2">
             <Table2 className="w-4 h-4" />
             Preview
@@ -199,6 +240,10 @@ export function TableDetailPanel({
           <TabsTrigger value="schema" className="flex items-center gap-2">
             <Columns className="w-4 h-4" />
             Schema
+          </TabsTrigger>
+          <TabsTrigger value="indexes" className="flex items-center gap-2" onClick={fetchIndexes}>
+            <ListTree className="w-4 h-4" />
+            Indexes
           </TabsTrigger>
           <TabsTrigger value="query" className="flex items-center gap-2">
             <Code className="w-4 h-4" />
@@ -261,6 +306,56 @@ export function TableDetailPanel({
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="indexes" className="mt-4">
+          <Card className="p-4">
+            <h3 className="text-sm font-medium mb-4">Table Indexes</h3>
+            {indexesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">Name</TableHead>
+                      <TableHead className="font-semibold">Columns</TableHead>
+                      <TableHead className="font-semibold">Unique</TableHead>
+                      <TableHead className="font-semibold">Primary</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {indexes.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          {indexesFetched ? "No indexes found" : "Click the Indexes tab to load"}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      indexes.map((idx) => (
+                        <TableRow key={idx.indexname}>
+                          <TableCell className="font-mono text-sm">{idx.indexname}</TableCell>
+                          <TableCell className="font-mono text-sm">{idx.columns}</TableCell>
+                          <TableCell>
+                            <Badge variant={idx.is_unique ? "secondary" : "outline"}>
+                              {idx.is_unique ? "Yes" : "No"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={idx.is_primary ? "secondary" : "outline"}>
+                              {idx.is_primary ? "Yes" : "No"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>

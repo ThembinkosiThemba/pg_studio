@@ -127,6 +127,41 @@ export async function POST(req: NextRequest) {
         [tableName],
       );
       result = queryResult.rows;
+    } else if (type === "indexes") {
+      if (!tableName) {
+        client.release();
+        return NextResponse.json(
+          { error: "Missing tableName" },
+          { status: 400 },
+        );
+      }
+      const queryResult = await client.query(
+        `
+        SELECT
+          pi.indexname,
+          pi.indexdef,
+          ix.indisunique  AS is_unique,
+          ix.indisprimary AS is_primary,
+          array_to_string(
+            array(
+              SELECT a.attname
+              FROM   pg_attribute a
+              WHERE  a.attrelid = ix.indrelid
+              AND    a.attnum = ANY(ix.indkey)
+              ORDER  BY a.attnum
+            ), ', '
+          ) AS columns
+        FROM   pg_indexes pi
+        JOIN   pg_class  tc ON tc.relname = pi.tablename  AND tc.relkind = 'r'
+        JOIN   pg_class  ic ON ic.relname = pi.indexname
+        JOIN   pg_index  ix ON ix.indexrelid = ic.oid AND ix.indrelid = tc.oid
+        WHERE  pi.tablename   = $1
+        AND    pi.schemaname  = 'public'
+        ORDER  BY pi.indexname;
+        `,
+        [tableName],
+      );
+      result = queryResult.rows;
     }
 
     client.release();

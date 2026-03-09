@@ -17,9 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MoreVertical, Trash2, Loader, Database } from "lucide-react";
+import { MoreVertical, Trash2, Loader, Database, Search } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { Input } from "@/components/ui/input";
 
 interface MongoDatabasesPanelProps {
   userId: string;
@@ -39,6 +40,7 @@ export function MongoDatabasesPanel({
     database: string;
   }>({ open: false, database: "" });
   const [dropping, setDropping] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchDatabases();
@@ -108,10 +110,24 @@ export function MongoDatabasesPanel({
     );
   }
 
+  const filteredDatabases = databases.filter((db) =>
+    db.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <>
+      <div className="mb-6 relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search databases..."
+          className="pl-9"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {databases.map((db) => (
+        {filteredDatabases.map((db) => (
           <Card
             key={db}
             className="p-4 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
@@ -165,6 +181,12 @@ export function MongoDatabasesPanel({
         {databases.length === 0 && (
           <div className="col-span-full text-center py-12 text-muted-foreground">
             No databases found
+          </div>
+        )}
+
+        {databases.length > 0 && filteredDatabases.length === 0 && (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            No databases match your search
           </div>
         )}
       </div>
